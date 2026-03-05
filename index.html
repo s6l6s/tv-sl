@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SL World TV Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        body { margin: 0; background: #121212; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* --- REPRODUCTOR (65% Pantalla) --- */
+        #video-container { 
+            height: 65vh; 
+            background: #000; 
+            display: flex; align-items: center; justify-content: center; 
+        }
+        video { width: 100%; height: 100%; }
+
+        /* --- MENÚ (35% Pantalla) --- */
+        #controls {
+            height: 35vh;
+            display: flex; flex-direction: column;
+            background: #1e1e1e;
+            border-top: 4px solid #007bff;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* Barra Superior del Menú */
+        #nav-bar { display: flex; gap: 10px; margin-bottom: 10px; height: 30px; }
+        
+        input#search-box {
+            flex-grow: 1;
+            background: #333; border: 1px solid #555; color: white;
+            padding: 5px 10px; border-radius: 4px;
+        }
+        
+        button.back-btn {
+            background: #d9534f; color: white; border: none; padding: 0 15px; 
+            cursor: pointer; border-radius: 4px; font-weight: bold;
+            display: none; /* Oculto al inicio */
+        }
+
+        /* Área de lista (Grid) */
+        #list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 5px;
+            padding-right: 5px;
+        }
+
+        /* Botones */
+        .item-btn {
+            background: #2a2a2a; color: #ddd; border: 1px solid #333;
+            padding: 8px; cursor: pointer; text-align: left;
+            font-size: 12px; border-radius: 3px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .item-btn:hover { background: #007bff; color: white; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="video-container">
+        <video id="video" controls autoplay></video>
+    </div>
+
+    <div id="controls">
+        <div id="nav-bar">
+            <button id="btn-back" class="back-btn" onclick="renderPaises()">⬅ Volver</button>
+            <input type="text" id="search-box" placeholder="🔍 Buscar país..." onkeyup="filtrarPaises()">
+        </div>
+        <div id="list-container">
+            <p style="text-align:center; width:100%;">Cargando lista mundial...</p>
+        </div>
+    </div>
+
+    <script>
+        var video = document.getElementById('video');
+        var listContainer = document.getElementById('list-container');
+        var btnBack = document.getElementById('btn-back');
+        var searchBox = document.getElementById('search-box');
+        var hls = new Hls();
+
+        // Variables globales para guardar los datos
+        let todosLosPaises = []; 
+
+        // 1. INICIO: Descargar la lista oficial de países desde la API
+        fetch('https://iptv-org.github.io/api/countries.json')
+            .then(res => res.json())
+            .then(data => {
+                // Filtramos solo los que tienen nombre y código
+                todosLosPaises = data.filter(p => p.name && p.code);
+                
+                // ORDENAR ALFABÉTICAMENTE (A-Z)
+                todosLosPaises.sort((a, b) => a.name.localeCompare(b.name));
+                
+                renderPaises();
+            })
+            .catch(err => {
+                listContainer.innerHTML = "<p style='color:red'>Error al cargar API de países.</p>";
+            });
+
+        // 2. RENDERIZAR PAÍSES (Dibuja los botones)
+        function renderPaises(filtro = "") {
+            listContainer.innerHTML = "";
+            btnBack.style.display = "none";
+            searchBox.style.display = "block";
+            searchBox.placeholder = "🔍 Buscar país (" + todosLosPaises.length + " disponibles)...";
+            searchBox.value = filtro; // Mantener texto si hay filtro
+
+            let contador = 0;
+
+            todosLosPaises.forEach(pais => {
+                // Filtro de búsqueda
+                if (pais.name.toLowerCase().includes(filtro.toLowerCase())) {
+                    let btn = document.createElement('button');
+                    btn.className = 'item-btn';
+                    // Usamos la bandera (emoji) que viene en la API + Nombre
+                    btn.innerHTML = `<span>${pais.flag || '🏳️'}</span> ${pais.name}`;
+                    btn.onclick = () => cargarCanales(pais.code, pais.name);
+                    listContainer.appendChild(btn);
+                    contador++;
+                }
+            });
+
+            if (contador === 0) listContainer.innerHTML = "<p>No se encontró ese país.</p>";
+        }
+
+        // 3. FUNCIÓN DEL BUSCADOR
+        function filtrarPaises() {
+            let texto = searchBox.value;
+            renderPaises(texto);
+        }
+
+        // 4. CARGAR CANALES DE UN PAÍS
+        function cargarCanales(code, nombrePais) {
+            listContainer.innerHTML = "<p style='text-align:center; width:100%;'>Buscando canales de " + nombrePais + "...</p>";
+            btnBack.style.display = "block";
+            searchBox.style.display = "none"; // Ocultar buscador en modo canales
+
+            // URL de la lista específica del país
+            const url = `https://iptv-org.github.io/iptv/countries/${code.toLowerCase()}.m3u`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error("Sin canales");
+                    return response.text();
+                })
+                .then(data => {
+                    parsearM3U(data);
+                })
+                .catch(err => {
+                    listContainer.innerHTML = "<p style='text-align:center; color:orange;'>Lo sentimos, no hay canales activos para " + nombrePais + " en este momento.</p>";
+                });
+        }
+
+        // 5. LEER EL ARCHIVO M3U Y CREAR BOTONES DE TV
+        function parsearM3U(data) {
+            listContainer.innerHTML = "";
+            const lineas = data.split('\n');
+            let canales = 0;
+
+            for (let i = 0; i < lineas.length; i++) {
+                if (lineas[i].startsWith('#EXTINF')) {
+                    let info = lineas[i];
+                    // Truco para sacar el nombre limpio después de la coma
+                    let nombre = info.split(',').slice(1).join(',').trim();
+                    let urlVideo = lineas[i+1];
+
+                    if (urlVideo && urlVideo.startsWith('http')) {
+                        let btn = document.createElement('button');
+                        btn.className = 'item-btn';
+                        btn.innerText = "📺 " + nombre;
+                        btn.onclick = () => reproducir(urlVideo.trim());
+                        listContainer.appendChild(btn);
+                        canales++;
+                    }
+                }
+            }
+
+            if (canales === 0) {
+                listContainer.innerHTML = "<p>Lista vacía.</p>";
+            }
+        }
+
+        // 6. REPRODUCTOR DE VIDEO
+        function reproducir(source) {
+            if (Hls.isSupported()) {
+                hls.loadSource(source);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() { video.play(); });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = source;
+                video.addEventListener('loadedmetadata', function() { video.play(); });
+            }
+        }
+    </script>
+</body>
+</html>
