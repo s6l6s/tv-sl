@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SL Cinema OS - Pro</title>
+    <title>SL Cinema OS - Ultimate</title>
     
-    <!-- ANTI-CACHE -->
+    <!-- ANTI-CACHE AGRESIVO -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -25,50 +25,43 @@
             display: flex; height: 100vh; overflow: hidden; 
         }
 
-        /* --- BARRA LATERAL (TODO SUCEDE AQUÍ) --- */
+        /* --- BARRA LATERAL --- */
         #sidebar {
             width: 320px;
             background: var(--panel);
             border-right: 1px solid #222;
             display: flex;
             flex-direction: column;
-            transition: 0.3s;
+            z-index: 20;
         }
 
-        /* CABECERA Y BUSCADOR */
         #side-header { padding: 20px; border-bottom: 1px solid #222; }
         .nav-top { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        #back-btn { 
-            cursor: pointer; font-size: 20px; color: var(--accent); 
-            display: none; /* Oculto por defecto */
-        }
-        #side-title { margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase; }
+        #back-btn { cursor: pointer; font-size: 20px; color: var(--accent); display: none; }
+        #side-title { margin: 0; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
-        #search-box { position: relative; }
         #search-input {
             width: 100%; background: #000; border: 1px solid #333;
             color: #fff; padding: 10px; border-radius: 5px; box-sizing: border-box;
             outline: none; font-size: 13px;
         }
 
-        /* PESTAÑAS */
-        #tabs { display: flex; border-bottom: 1px solid #222; }
+        #tabs { display: flex; border-bottom: 1px solid #222; background: #0a0a0a; }
         .tab { 
             flex: 1; padding: 12px; text-align: center; cursor: pointer; 
-            font-size: 12px; font-weight: bold; color: #666; transition: 0.2s;
+            font-size: 11px; font-weight: bold; color: #555; transition: 0.2s;
         }
-        .tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); background: #151515; }
+        .tab.active { color: var(--accent); border-bottom: 2px solid var(--accent); background: #111; }
 
-        /* LISTA DINÁMICA */
-        #main-list { flex: 1; overflow-y: auto; padding: 10px; }
+        #main-list { flex: 1; overflow-y: auto; padding: 10px; background: #0d0d0d; }
         .list-item {
-            padding: 12px 15px; margin-bottom: 4px; border-radius: 6px;
-            cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 10px;
-            background: rgba(255,255,255,0.02); transition: 0.2s;
+            padding: 10px 15px; margin-bottom: 3px; border-radius: 4px;
+            cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.02); transition: 0.1s;
+            border-left: 2px solid transparent;
         }
-        .list-item:hover { background: var(--hover); color: var(--accent); }
-        .list-item.channel { border-left: 2px solid #333; }
-        .list-item.channel:hover { border-left-color: var(--accent); }
+        .list-item:hover { background: var(--hover); color: var(--accent); border-left-color: var(--accent); }
+        .list-item span { color: var(--accent); font-weight: bold; font-family: monospace; }
 
         /* --- ÁREA DE VIDEO --- */
         #video-area { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
@@ -76,16 +69,16 @@
 
         #osd {
             position: absolute; bottom: 30px; left: 30px;
-            background: rgba(0,0,0,0.8); padding: 15px 25px;
+            background: rgba(0,0,0,0.85); padding: 15px 25px;
             border-left: 5px solid var(--accent); pointer-events: none;
             z-index: 10;
         }
-        #osd h3 { margin: 0; font-size: 18px; letter-spacing: 1px; }
-        #osd p { margin: 5px 0 0; font-size: 12px; color: var(--accent); font-weight: bold; }
+        #osd h3 { margin: 0; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
+        #osd p { margin: 5px 0 0; font-size: 11px; color: var(--accent); font-weight: bold; letter-spacing: 2px; }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
     </style>
 </head>
@@ -95,11 +88,9 @@
         <div id="side-header">
             <div class="nav-top">
                 <span id="back-btn" onclick="goBack()">⬅</span>
-                <h1 id="side-title">PAÍSES</h1>
+                <h1 id="side-title">Cargando...</h1>
             </div>
-            <div id="search-box">
-                <input type="text" id="search-input" placeholder="Buscar...">
-            </div>
+            <input type="text" id="search-input" placeholder="Buscar en la lista...">
         </div>
 
         <div id="tabs">
@@ -108,14 +99,14 @@
         </div>
 
         <div id="main-list">
-            <!-- Contenido dinámico -->
+            <div style="text-align:center; padding-top:50px; color: #444;">Iniciando base de datos...</div>
         </div>
     </div>
 
     <div id="video-area">
         <div id="osd">
             <h3 id="current-channel">SISTEMA LISTO</h3>
-            <p id="current-status">ESPERANDO SELECCIÓN</p>
+            <p id="current-status">ONLINE</p>
         </div>
         <video id="video" autoplay controls></video>
     </div>
@@ -129,25 +120,33 @@
         const tabs = document.getElementById('tabs');
         
         let hls = new Hls();
-        let currentMode = 'countries'; // 'countries', 'channels', 'country-detail'
+        let currentMode = 'countries'; 
         let dataStore = { countries: [], allChannels: [] };
-        let lastCountryList = "";
 
-        // 1. INICIALIZACIÓN
+        // 1. CARGA INICIAL
         async function init() {
             const ts = Date.now();
-            // Cargar países
-            const resC = await fetch(`https://iptv-org.github.io/api/countries.json?v=${ts}`);
-            dataStore.countries = (await resC.json()).filter(c => c.name).sort((a,b) => a.name.localeCompare(b.name));
-            
-            // Cargar una muestra de canales globales para la pestaña "Canales"
-            const resS = await fetch(`https://iptv-org.github.io/api/streams.json?v=${ts}`);
-            dataStore.allChannels = await resS.json();
+            try {
+                // Cargar Países
+                const resC = await fetch(`https://iptv-org.github.io/api/countries.json?v=${ts}`);
+                dataStore.countries = (await resC.json()).filter(c => c.name).sort((a,b) => a.name.localeCompare(b.name));
+                
+                // Cargar TODOS los canales (Streams)
+                const resS = await fetch(`https://iptv-org.github.io/api/streams.json?v=${ts}`);
+                const streams = await resS.json();
+                
+                // Limpiar y Ordenar Alfabéticamente por el ID del canal o URL
+                dataStore.allChannels = streams
+                    .filter(s => s.channel)
+                    .sort((a, b) => a.channel.localeCompare(b.channel));
 
-            renderCountries();
+                switchMode('countries');
+            } catch (e) {
+                mainList.innerHTML = "Error al conectar con la API.";
+            }
         }
 
-        // 2. CAMBIAR ENTRE PESTAÑAS (PAISES / CANALES)
+        // 2. CAMBIAR PESTAÑAS
         function switchMode(mode) {
             currentMode = mode;
             searchInput.value = "";
@@ -158,12 +157,11 @@
             document.getElementById(`tab-${mode}`).classList.add('active');
 
             if(mode === 'countries') renderCountries();
-            else renderGlobalChannels();
+            else renderAllChannels();
         }
 
-        // 3. RENDERIZAR PAÍSES
+        // 3. RENDER PAÍSES
         function renderCountries(filter = "") {
-            currentMode = 'countries';
             sideTitle.innerText = "PAÍSES";
             mainList.innerHTML = "";
             dataStore.countries.forEach(c => {
@@ -177,14 +175,44 @@
             });
         }
 
-        // 4. RENDERIZAR CANALES DE UN PAÍS ESPECÍFICO
+        // 4. RENDER TODOS LOS CANALES (ALFABÉTICO)
+        function renderAllChannels(filter = "") {
+            sideTitle.innerText = "CANALES (A-Z)";
+            mainList.innerHTML = "";
+            
+            const filtered = filter.length > 0 
+                ? dataStore.allChannels.filter(c => c.channel.toLowerCase().includes(filter.toLowerCase()))
+                : dataStore.allChannels;
+
+            // Renderizado optimizado para 10,000 items
+            const fragment = document.createDocumentFragment();
+            const limit = filter.length > 0 ? filtered.length : 500; // Mostrar 500 al inicio si no hay búsqueda para evitar lag
+
+            for (let i = 0; i < Math.min(filtered.length, limit); i++) {
+                const c = filtered[i];
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `<span>▸</span> ${c.channel.replace(/\-/g, ' ').toUpperCase()}`;
+                div.onclick = () => play(c.url, c.channel);
+                fragment.appendChild(div);
+            }
+            mainList.appendChild(fragment);
+            
+            if(filtered.length > limit && filter.length === 0) {
+                const note = document.createElement('div');
+                note.style = "padding: 10px; font-size: 10px; color: #444; text-align: center;";
+                note.innerText = "Usa el buscador para filtrar entre los +10,000 canales...";
+                mainList.appendChild(note);
+            }
+        }
+
+        // 5. CARGAR CANALES DE UN PAÍS
         async function loadCountryChannels(code, name) {
             currentMode = 'country-detail';
             sideTitle.innerText = name;
             backBtn.style.display = "block";
-            tabs.style.display = "none"; // Ocultar pestañas al estar dentro de un país
-            mainList.innerHTML = "Cargando canales...";
-            searchInput.value = "";
+            tabs.style.display = "none";
+            mainList.innerHTML = "Cargando...";
 
             try {
                 const res = await fetch(`https://iptv-org.github.io/iptv/countries/${code.toLowerCase()}.m3u`);
@@ -198,8 +226,8 @@
                         const url = lines[i+1];
                         if(url && url.startsWith('http')) {
                             const div = document.createElement('div');
-                            div.className = 'list-item channel';
-                            div.innerHTML = `▸ ${cName}`;
+                            div.className = 'list-item';
+                            div.innerHTML = `<span>▸</span> ${cName.toUpperCase()}`;
                             div.onclick = () => play(url, cName);
                             mainList.appendChild(div);
                         }
@@ -210,33 +238,14 @@
             }
         }
 
-        // 5. RENDERIZAR CANALES GLOBALES (Pestaña Canales)
-        function renderGlobalChannels(filter = "") {
-            sideTitle.innerText = "CANALES";
-            mainList.innerHTML = "";
-            
-            // Si no hay filtro, mostrar una muestra aleatoria para no colapsar
-            const list = filter.length > 2 
-                ? dataStore.allChannels.filter(c => c.channel && c.channel.toLowerCase().includes(filter.toLowerCase())).slice(0, 100)
-                : dataStore.allChannels.slice(0, 50);
-
-            list.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'list-item channel';
-                div.innerHTML = `🌐 ${c.channel.toUpperCase()}`;
-                div.onclick = () => play(c.url, c.channel);
-                mainList.appendChild(div);
-            });
-        }
-
-        // 6. VOLVER ATRÁS
+        // 6. VOLVER
         function goBack() {
             switchMode('countries');
         }
 
         // 7. REPRODUCTOR
         function play(url, name) {
-            document.getElementById('current-channel').innerText = name.toUpperCase();
+            document.getElementById('current-channel').innerText = name.replace(/\-/g, ' ').toUpperCase();
             document.getElementById('current-status').innerText = "CONECTANDO...";
             
             const sUrl = url.replace('http://', 'https://');
@@ -251,18 +260,17 @@
                     document.getElementById('current-status').innerText = "EN VIVO";
                 });
                 hls.on(Hls.Events.ERROR, () => {
-                    document.getElementById('current-status').innerText = "SEÑAL OFFLINE";
+                    document.getElementById('current-status').innerText = "OFFLINE";
                 });
             }
         }
 
-        // 8. BUSCADOR INTELIGENTE
+        // 8. BUSCADOR
         searchInput.oninput = () => {
             const val = searchInput.value;
             if (currentMode === 'countries') renderCountries(val);
-            else if (currentMode === 'channels') renderGlobalChannels(val);
+            else if (currentMode === 'channels') renderAllChannels(val);
             else {
-                // Filtrar canales dentro de la lista de un país ya cargada
                 const items = mainList.getElementsByClassName('list-item');
                 Array.from(items).forEach(item => {
                     item.style.display = item.innerText.toLowerCase().includes(val.toLowerCase()) ? "flex" : "none";
