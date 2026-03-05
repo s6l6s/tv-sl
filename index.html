@@ -2,156 +2,202 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SL Smart TV Pro</title>
+    <title>SL Neo-TV Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --primary: #007bff; --bg: #0f0f0f; --panel: #1e1e1e; --text: #efefef; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* VIDEO (60%) */
-        #video-container { height: 60vh; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
-        video { width: 100%; height: 100%; object-fit: contain; }
-        #loading-overlay { position: absolute; background: rgba(0,0,0,0.7); padding: 10px; display: none; border-radius: 5px; }
+        :root {
+            --neon: #00f2ff;
+            --accent: #bc13fe;
+            --bg: #050505;
+            --glass: rgba(20, 20, 20, 0.85);
+        }
 
-        /* CONTROLES (40%) */
-        #controls { height: 40vh; display: flex; flex-direction: column; background: var(--panel); border-top: 3px solid var(--primary); box-sizing: border-box; }
+        body { 
+            margin: 0; background: var(--bg); color: #fff; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            height: 100vh; overflow: hidden; 
+        }
 
-        /* BUSCADOR Y TABS */
-        #header-tools { padding: 10px; background: #252525; display: flex; flex-direction: column; gap: 8px; }
-        .search-row { display: flex; gap: 10px; }
-        input#search-input { flex-grow: 1; background: #333; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; outline: none; }
-        
-        .tabs { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; }
-        .tab-btn { background: #333; color: #bbb; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; white-space: nowrap; }
-        .tab-btn.active { background: var(--primary); color: white; }
+        /* FONDO DE VIDEO */
+        #main-display {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; display: flex; align-items: center; justify-content: center;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* LISTA DE RESULTADOS */
-        #results-container { flex-grow: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 10px; }
-        .card { background: #2a2a2a; border: 1px solid #333; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60px; }
-        .card:hover { background: var(--primary); border-color: #fff; }
-        .card-title { font-size: 11px; font-weight: bold; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .card-meta { font-size: 9px; color: #aaa; text-transform: uppercase; margin-top: 3px; }
+        /* INTERFAZ SUPERPUESTA */
+        #ui-layer {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            z-index: 2; pointer-events: none; /* No bloquea el click al video si no hay menú */
+            display: flex; flex-direction: column; align-items: center;
+            padding-bottom: 20px;
+        }
 
-        /* SCROLLBAR */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        /* BUSCADOR ESTILO FUTURISTA */
+        #search-container {
+            pointer-events: auto; width: 60%; margin-bottom: 15px;
+            background: var(--glass); border: 1px solid var(--neon);
+            border-radius: 50px; padding: 10px 20px;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+            display: flex; align-items: center;
+        }
+        #search-input {
+            background: transparent; border: none; color: white; width: 100%;
+            outline: none; font-size: 16px; text-align: center;
+        }
+
+        /* GRILLA DE CANALES */
+        #channel-grid {
+            pointer-events: auto; width: 90%; max-height: 40vh;
+            background: var(--glass); border-radius: 15px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px; padding: 15px; overflow-y: auto;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* BOTONES DE CANAL */
+        .channel-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 10px; text-align: center;
+            cursor: pointer; transition: 0.3s; height: 60px;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .channel-card:hover {
+            background: var(--neon); color: #000;
+            box-shadow: 0 0 20px var(--neon);
+            transform: translateY(-5px);
+        }
+        .channel-card span { font-size: 11px; font-weight: bold; text-transform: uppercase; }
+
+        /* CATEGORÍAS LATERALES */
+        #cat-bar {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            z-index: 3; pointer-events: auto; display: flex; flex-direction: column; gap: 10px;
+        }
+        .cat-btn {
+            background: var(--glass); border: 1px solid var(--accent);
+            color: white; padding: 10px; border-radius: 10px; cursor: pointer;
+            writing-mode: vertical-lr; text-orientation: mixed; font-size: 12px;
+            transition: 0.3s;
+        }
+        .cat-btn:hover { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
+
+        /* NOTIFICACIÓN */
+        #status {
+            position: absolute; top: 20px; right: 20px; font-size: 12px;
+            background: var(--glass); padding: 5px 15px; border-radius: 20px;
+            border: 1px solid var(--neon); color: var(--neon); z-index: 4;
+        }
+
+        /* SCROLLBAR CUSTOM */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="video-container">
-        <div id="loading-overlay">Cargando señal...</div>
-        <video id="video" controls autoplay></video>
+    <div id="status">SISTEMA ONLINE</div>
+
+    <div id="main-display">
+        <video id="video" poster="https://i.imgur.com/8N8y6R2.jpg" autoplay></video>
     </div>
 
-    <div id="controls">
-        <div id="header-tools">
-            <div class="search-row">
-                <input type="text" id="search-input" placeholder="🔍 Buscar canal en todo el mundo (ej: CNN, Telefe, Disney)...">
-                <button class="tab-btn active" id="btn-home" onclick="renderHome()">🏠 Inicio</button>
-            </div>
-            <div class="tabs">
-                <button class="tab-btn" onclick="fetchByCategory('news')">📰 Noticias</button>
-                <button class="tab-btn" onclick="fetchByCategory('music')">🎵 Música</button>
-                <button class="tab-btn" onclick="fetchByCategory('sports')">⚽ Deportes</button>
-                <button class="tab-btn" onclick="fetchByCategory('movies')">🎬 Cine</button>
-                <button class="tab-btn" onclick="fetchByCategory('kids')">🧸 Niños</button>
-                <button class="tab-btn" onclick="fetchByTopCountries()">🌍 Países Top</button>
-            </div>
+    <div id="cat-bar">
+        <div class="cat-btn" onclick="loadByCountry('MX')">MEXICO</div>
+        <div class="cat-btn" onclick="loadByCountry('ES')">ESPAÑA</div>
+        <div class="cat-btn" onclick="loadByCountry('AR')">ARGENTINA</div>
+        <div class="cat-btn" onclick="loadByCountry('US')">USA</div>
+    </div>
+
+    <div id="ui-layer">
+        <div id="search-container">
+            <input type="text" id="search-input" placeholder="ESCRIBE EL NOMBRE DE UN CANAL...">
         </div>
-        <div id="results-container">
-            <!-- Los resultados aparecen aquí -->
+        
+        <div id="channel-grid">
+            <!-- Los canales se cargan aquí -->
+            <div style="grid-column: 1/-1; text-align:center; padding:20px;">
+                BIENVENIDO AL SISTEMA. CARGANDO CANALES TOP...
+            </div>
         </div>
     </div>
 
     <script>
         const video = document.getElementById('video');
-        const resultsContainer = document.getElementById('results-container');
+        const grid = document.getElementById('channel-grid');
         const searchInput = document.getElementById('search-input');
-        const loadingOverlay = document.getElementById('loading-overlay');
+        const status = document.getElementById('status');
         let hls = new Hls();
-        let allChannels = [];
+        let allStreams = [];
 
-        // 1. CARGAR BASE DE DATOS INICIAL (Solo nombres y urls para búsqueda rápida)
+        // 1. CARGAR DATOS INICIALES
         async function init() {
-            resultsContainer.innerHTML = "Cargando base de datos mundial...";
             try {
-                // Usamos la API de streams que es más directa
+                status.innerText = "CONECTANDO API...";
                 const res = await fetch('https://iptv-org.github.io/api/streams.json');
-                allChannels = await res.json();
-                renderHome();
+                allStreams = await res.json();
+                status.innerText = "SISTEMA LISTO";
+                loadSample();
             } catch (e) {
-                resultsContainer.innerHTML = "Error al conectar con la base de datos.";
+                status.innerText = "ERROR DE CONEXIÓN";
             }
         }
 
-        // 2. BUSCADOR GLOBAL (Se activa al escribir)
+        // 2. BUSCADOR
         searchInput.oninput = () => {
             const query = searchInput.value.toLowerCase();
-            if (query.length < 3) return; // Esperar a 3 letras
-            
-            const filtered = allChannels.filter(c => 
-                (c.channel && c.channel.toLowerCase().includes(query))
-            ).slice(0, 80); // Limitar a 80 para no laggear SL
-
-            renderCards(filtered, "Resultados de búsqueda");
+            if (query.length < 3) return;
+            const results = allStreams.filter(s => s.channel && s.channel.toLowerCase().includes(query)).slice(0, 50);
+            render(results);
         };
 
-        // 3. RENDERIZAR INICIO
-        function renderHome() {
-            searchInput.value = "";
-            const randomChannels = allChannels.sort(() => 0.5 - Math.random()).slice(0, 30);
-            renderCards(randomChannels, "Sugerencias para ti");
+        // 3. CARGAR POR PAÍS (Botones laterales)
+        async function loadByCountry(code) {
+            status.innerText = `BUSCANDO: ${code}...`;
+            // Filtramos la lista gigante por país
+            const results = allStreams.filter(s => s.channel && s.channel.toLowerCase().includes(`(${code.toLowerCase()})`) || (s.url.includes(`/${code.toLowerCase()}.m3u`))).slice(0, 60);
+            
+            // Si la búsqueda simple falla, pedimos la lista oficial del país
+            fetch(`https://iptv-org.github.io/iptv/countries/${code.toLowerCase()}.m3u`)
+                .then(res => res.text())
+                .then(data => parseM3U(data));
         }
 
-        // 4. FILTRAR POR CATEGORÍA
-        async function fetchByCategory(cat) {
-            resultsContainer.innerHTML = "Filtrando por " + cat + "...";
-            const res = await fetch(`https://iptv-org.github.io/api/streams.json`);
-            const data = await res.json();
-            // Esta es una simplificación, iptv-org separa categorías en otros JSON
-            // pero para velocidad buscaremos por etiquetas si existen
-            renderHome(); // Reemplazar con lógica real de categorías si es necesario
+        function parseM3U(data) {
+            const lines = data.split('\n');
+            const list = [];
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('#EXTINF')) {
+                    const name = lines[i].split(',')[1] || "CANAL";
+                    list.push({ channel: name, url: lines[i+1] });
+                }
+            }
+            render(list.slice(0, 100));
         }
 
-        function fetchByTopCountries() {
-            // Regresar al modo países o mostrar los más importantes
-            resultsContainer.innerHTML = "Cargando países principales...";
-            const top = ["AR", "MX", "ES", "US", "CO", "CL", "PE", "BR", "IT", "FR"];
-            resultsContainer.innerHTML = "";
-            top.forEach(code => {
-                let btn = document.createElement('div');
-                btn.className = 'card';
-                btn.innerHTML = `<span class="card-title">Ver ${code}</span>`;
-                btn.onclick = () => window.location.reload(); // Simplificado para volver al menú anterior si lo deseas
-                resultsContainer.appendChild(btn);
-            });
-        }
-
-        // 5. DIBUJAR TARJETAS
-        function renderCards(list, title) {
-            resultsContainer.innerHTML = "";
+        // 4. DIBUJAR GRILLA
+        function render(list) {
+            grid.innerHTML = "";
             list.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'card';
-                
-                // Limpiar el nombre del canal (quitar guiones, etc)
-                const name = item.channel ? item.channel.replace(/\./g, ' ').toUpperCase() : "CANAL DESCONOCIDO";
-                const lang = item.language ? item.language[0] : "";
-                
-                card.innerHTML = `
-                    <div class="card-title">${name}</div>
-                    <div class="card-meta">${lang} | ${item.quality || 'SD'}</div>
-                `;
-                card.onclick = () => playStream(item.url);
-                resultsContainer.appendChild(card);
+                card.className = 'channel-card';
+                card.innerHTML = `<span>${item.channel.replace('.us', '').replace('.mx', '').toUpperCase()}</span>`;
+                card.onclick = () => play(item.url);
+                grid.appendChild(card);
             });
+            status.innerText = `${list.length} CANALES CARGADOS`;
         }
 
-        // 6. REPRODUCTOR
-        function playStream(url) {
-            loadingOverlay.style.display = 'block';
-            let streamUrl = url.replace('http://', 'https://'); // Forzar HTTPS
+        function loadSample() {
+            const sample = allStreams.sort(() => 0.5 - Math.random()).slice(0, 20);
+            render(sample);
+        }
+
+        // 5. REPRODUCTOR
+        function play(url) {
+            status.innerText = "SINTONIZANDO...";
+            let streamUrl = url.replace('http://', 'https://');
 
             if (Hls.isSupported()) {
                 hls.destroy();
@@ -160,10 +206,7 @@
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     video.play();
-                    loadingOverlay.style.display = 'none';
-                });
-                hls.on(Hls.Events.ERROR, (e, data) => {
-                    if (data.fatal) loadingOverlay.innerText = "Error de señal";
+                    status.innerText = "EN VIVO";
                 });
             }
         }
